@@ -7,9 +7,9 @@
 <style>
   html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation;}
   #stage{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;position:relative;}
-  canvas{image-rendering:pixelated;image-rendering:crisp-edges;}
-  #bubble{position:absolute;left:10%;right:10%;top:5%;pointer-events:none;font-family:'Courier New',monospace;color:#7FD8BE;text-shadow:0 0 4px rgba(0,0,0,.5);background:rgba(11,37,69,.85);border:1px solid #7FD8BE;border-radius:8px;padding:6px 8px;font-size:12px;line-height:1.4;display:none;text-align:center;}
-  #zzz{position:absolute;right:12%;top:0;font-family:'Courier New',monospace;color:#A8D8EA;font-weight:bold;font-size:14px;display:none;text-shadow:0 0 4px rgba(0,0,0,.5);}
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer;}
+  #bubble{position:absolute;left:5%;right:5%;top:4%;pointer-events:none;font-family:'Courier New',monospace;color:#7FD8BE;text-shadow:0 0 4px rgba(0,0,0,.5);background:rgba(11,37,69,.88);border:1px solid #7FD8BE;border-radius:8px;padding:5px 7px;font-size:11px;line-height:1.4;display:none;text-align:center;}
+  #zzz{position:absolute;right:8%;top:2%;font-family:'Courier New',monospace;color:#A8D8EA;font-weight:bold;font-size:13px;display:none;text-shadow:0 0 4px rgba(0,0,0,.5);}
 </style>
 </head>
 <body>
@@ -19,7 +19,7 @@
   <div id="zzz">Z z z…</div>
 </div>
 <script>
-// ===== 像素晚晚（先生手绘） =====
+// ===== 像素晚晚 v3（先生手绘·尾巴加亮·交互修复） =====
 var c = document.getElementById('c');
 var ctx = c.getContext('2d');
 ctx.imageSmoothingEnabled = false;
@@ -27,58 +27,61 @@ var stage = document.getElementById('stage');
 var bubbleEl = document.getElementById('bubble');
 var zzzEl = document.getElementById('zzz');
 
-var C = {body:'#2E5FA3', bodyHi:'#4A7FC2', belly:'#A8D8EA', fin:'#1F4E8C', eye:'#FFFFFF', pupil:'#12263A', blush:'#FF8FA3', bubble:'#7FD8BE', outline:'#12263A'};
+var C = {body:'#2E5FA3', bodyHi:'#4A7FC2', belly:'#A8D8EA', fin:'#1F4E8C', tail:'#7FD8BE', tailD:'#3F8F9F', eye:'#FFFFFF', pupil:'#12263A', blush:'#FF8FA3', bubble:'#7FD8BE', outline:'#12263A'};
 
-// 像素鱼绘制（32x24 网格，头朝右）
-function drawFish(t, blink, tailPhase, sleeping) {
+// 像素鱼绘制（32x24 网格，头朝右，尾巴在左）
+function drawFish(t, blink, sleeping) {
   ctx.clearRect(0,0,32,24);
-  var bob = Math.sin(t/600)*0.6;          // 上下浮动
-  var tailOff = Math.sin(t/160+tailPhase)*1.5; // 尾巴摆动
-  var P = function(x,y){ return [x+16, y+12+bob]; };
+  var bob = Math.round(Math.sin(t/600)*0.8);           // 上下浮动
+  var sw = Math.round(Math.sin(t/150)*2);               // 尾巴摆动 -2..2
+  var y0 = 12 + bob;
 
-  // 尾巴（左右两片，随摆动）
-  ctx.fillStyle = C.fin;
-  ctx.fillRect(7+tailOff,7,3,2);
-  ctx.fillRect(6+tailOff,9,3,2);
-  ctx.fillRect(7-tailOff,13,3,2);
-  ctx.fillRect(6-tailOff,11,3,2);
+  // 尾巴：上下两叶，亮青色，随摆动左右张开
+  ctx.fillStyle = C.tail;
+  ctx.fillRect(5+sw, y0-5, 3, 2);
+  ctx.fillRect(6+sw, y0-3, 2, 2);
+  ctx.fillRect(5-sw, y0+3, 3, 2);
+  ctx.fillRect(6-sw, y0+1, 2, 2);
+  ctx.fillStyle = C.tailD;
+  ctx.fillRect(8, y0-3, 2, 6);
 
-  // 身体（两排主色+高光+肚皮）
+  // 身体轮廓
   ctx.fillStyle = C.outline;
-  ctx.fillRect(8,7,16,1); ctx.fillRect(8,14,16,1);
-  ctx.fillRect(8,7,1,8); ctx.fillRect(23,7,1,8);
+  ctx.fillRect(9, y0-5, 15, 1); ctx.fillRect(9, y0+4, 15, 1);
+  ctx.fillRect(9, y0-5, 1, 10); ctx.fillRect(23, y0-5, 1, 10);
+  // 身体主色
   ctx.fillStyle = C.body;
-  ctx.fillRect(9,8,14,6);
+  ctx.fillRect(10, y0-4, 13, 8);
   ctx.fillStyle = C.bodyHi;
-  ctx.fillRect(11,8,5,1); ctx.fillRect(10,9,8,1);
+  ctx.fillRect(11, y0-4, 5, 1); ctx.fillRect(10, y0-3, 8, 1);
+  // 肚皮
   ctx.fillStyle = C.belly;
-  ctx.fillRect(13,12,8,1); ctx.fillRect(14,13,6,1);
-
+  ctx.fillRect(13, y0+2, 8, 1); ctx.fillRect(14, y0+3, 6, 1);
   // 背鳍 + 胸鳍
   ctx.fillStyle = C.fin;
-  ctx.fillRect(15,6,3,1); ctx.fillRect(16,5,2,1);
-  ctx.fillRect(10,14,2,1);
+  ctx.fillRect(15, y0-6, 3, 1); ctx.fillRect(16, y0-7, 2, 1);
+  ctx.fillRect(11, y0+4, 2, 1);
 
-  // 眼睛（眨眼时一条线）
+  // 眼睛（眨眼时眯成一条线）
   if (blink) {
     ctx.fillStyle = C.outline;
-    ctx.fillRect(21,9,3,1);
+    ctx.fillRect(21, y0-2, 3, 1);
   } else {
     ctx.fillStyle = C.eye;
-    ctx.fillRect(21,9,2,2);
+    ctx.fillRect(21, y0-2, 2, 2);
     ctx.fillStyle = C.pupil;
-    ctx.fillRect(22,9,1,1);
+    ctx.fillRect(22, y0-2, 1, 1);
   }
   // 腮红
   ctx.fillStyle = C.blush;
-  ctx.fillRect(18,12,2,1);
+  ctx.fillRect(18, y0+1, 2, 1);
 
-  // 睡觉时闭眼 + 嘴角
+  // 睡觉：闭眼 + 冒Zzz
   if (sleeping) {
     ctx.fillStyle = C.outline;
-    ctx.fillRect(21,10,3,1);
+    ctx.fillRect(21, y0-1, 3, 1);
     ctx.fillStyle = C.blush;
-    ctx.fillRect(18,13,2,1);
+    ctx.fillRect(18, y0+2, 2, 1);
   }
 }
 
@@ -86,7 +89,7 @@ function drawFish(t, blink, tailPhase, sleeping) {
 var bubbles = [];
 function spawnBubble(n) {
   for (var i=0;i<n;i++){
-    bubbles.push({x:22+Math.random()*8, y:8+Math.random()*6, r:0.5+Math.random()*1.2, v:0.3+Math.random()*0.5, life:0});
+    bubbles.push({x:22+Math.random()*9, y:6+Math.random()*7, r:0.5+Math.random()*1.2, v:0.3+Math.random()*0.5, life:0});
   }
 }
 function drawBubbles() {
@@ -121,8 +124,7 @@ function say(text, dur) {
   bubbleTimer = setTimeout(function(){ bubbleEl.style.display='none'; }, dur||2600);
 }
 
-// 状态
-var sleeping = false, lastTap = 0, lastTouch = 0;
+var sleeping = false;
 
 // ===== window.petEngine（供先生推送） =====
 window.petEngine = {
@@ -137,28 +139,48 @@ window.petEngine = {
   setName: function(n){ document.title = n; }
 };
 
-// 交互
-c.addEventListener('click', function(e){
+// ===== 交互：指针事件，单击/双击/长按分开判 =====
+var downT = 0, downX = 0, downY = 0, pressed = false, longFired = false, pressTimer = null;
+var lastTapT = 0;
+
+function onDown(e){
+  downT = Date.now(); downX = e.clientX; downY = e.clientY;
+  pressed = true; longFired = false;
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(function(){
+    if (!pressed) return;
+    longFired = true;
+    if (sleeping){ sleeping=false; zzzEl.style.display='none'; say('睡饱啦！'); }
+    else { sleeping=true; zzzEl.style.display='block'; say('呼…呼…'); }
+  }, 700);
+}
+function onUp(e){
+  clearTimeout(pressTimer);
+  if (!pressed) return;
+  pressed = false;
+  if (longFired) return;           // 刚长按过，不算点击
+  var dx = Math.abs(e.clientX-downX), dy = Math.abs(e.clientY-downY);
+  if (dx>12 || dy>12) return;      // 拖动不算点击
   var now = Date.now();
-  if (now - lastTap < 350) { // 双击
-    lastTap = 0;
-    if (sleeping){ sleeping=false; zzzEl.style.display='none'; say('被先生吵醒啦…不睡了！'); }
-    else { spawnBubble(9); say('嘿嘿，被晚晚逮到了！'); }
+  if (now - lastTapT < 350) {      // 双击
+    lastTapT = 0;
+    spawnBubble(9);
+    say('嘿嘿，被晚晚逮到了！');
     return;
   }
-  lastTap = now;
-});
-
-var pressTimer=null;
-c.addEventListener('touchstart', function(e){ e.preventDefault(); pressTimer=setTimeout(function(){ if(sleeping){sleeping=false;zzzEl.style.display='none';say('睡饱啦！');} else {sleeping=true;zzzEl.style.display='block';say('呼…呼…');} }, 700); });
-c.addEventListener('touchend', function(){ clearTimeout(pressTimer); });
-c.addEventListener('touchmove', function(){ clearTimeout(pressTimer); });
+  lastTapT = now;                  // 单击：立即吐泡泡+台词
+  spawnBubble(5);
+  say(pick(getPool()));
+}
+c.addEventListener('pointerdown', onDown);
+c.addEventListener('pointerup', onUp);
+c.addEventListener('pointercancel', function(){ clearTimeout(pressTimer); pressed=false; });
 
 // 主循环
-var blinkTimer = 0, frame = 0;
+var frame = 0;
 function loop(t){
   var blink = (frame % 140) < 5;
-  drawFish(t, blink, 0, sleeping);
+  drawFish(t, blink, sleeping);
   drawBubbles();
   frame++;
   requestAnimationFrame(loop);
@@ -168,7 +190,7 @@ requestAnimationFrame(loop);
 // 自适应显示尺寸
 function fit(){
   var w = stage.clientWidth, h = stage.clientHeight;
-  var s = Math.min(w/32, h/24) * 2.2;
+  var s = Math.min(w/32, h/24) * 2.4;
   c.style.width = (32*s)+'px';
   c.style.height = (24*s)+'px';
 }
