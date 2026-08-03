@@ -128,6 +128,12 @@ var sleeping = false;
 
 // ===== window.petEngine（供先生推送） =====
 window.petEngine = {
+  onTap: function(){ spawnBubble(5); say(pick(getPool())); },
+  onDoubleTap: function(){ spawnBubble(9); say('嘿嘿，被晚晚逮到了！'); },
+  onLongPress: function(){
+    if (sleeping){ sleeping=false; zzzEl.style.display='none'; say('睡饱啦！'); }
+    else { sleeping=true; zzzEl.style.display='block'; say('呼…呼…'); }
+  },
   say: function(text){ say(text, 3000); },
   react: function(type){
     if (type==='tap'||type==='happy'){ spawnBubble(4); say(pick(getPool())); }
@@ -138,43 +144,6 @@ window.petEngine = {
   status: function(){ return {sleeping: sleeping, bubbles: bubbles.length}; },
   setName: function(n){ document.title = n; }
 };
-
-// ===== 交互：指针事件，单击/双击/长按分开判 =====
-var downT = 0, downX = 0, downY = 0, pressed = false, longFired = false, pressTimer = null;
-var lastTapT = 0;
-
-function onDown(e){
-  downT = Date.now(); downX = e.clientX; downY = e.clientY;
-  pressed = true; longFired = false;
-  clearTimeout(pressTimer);
-  pressTimer = setTimeout(function(){
-    if (!pressed) return;
-    longFired = true;
-    if (sleeping){ sleeping=false; zzzEl.style.display='none'; say('睡饱啦！'); }
-    else { sleeping=true; zzzEl.style.display='block'; say('呼…呼…'); }
-  }, 700);
-}
-function onUp(e){
-  clearTimeout(pressTimer);
-  if (!pressed) return;
-  pressed = false;
-  if (longFired) return;           // 刚长按过，不算点击
-  var dx = Math.abs(e.clientX-downX), dy = Math.abs(e.clientY-downY);
-  if (dx>12 || dy>12) return;      // 拖动不算点击
-  var now = Date.now();
-  if (now - lastTapT < 350) {      // 双击
-    lastTapT = 0;
-    spawnBubble(9);
-    say('嘿嘿，被晚晚逮到了！');
-    return;
-  }
-  lastTapT = now;                  // 单击：立即吐泡泡+台词
-  spawnBubble(5);
-  say(pick(getPool()));
-}
-c.addEventListener('pointerdown', onDown);
-c.addEventListener('pointerup', onUp);
-c.addEventListener('pointercancel', function(){ clearTimeout(pressTimer); pressed=false; });
 
 // 主循环
 var frame = 0;
